@@ -25,14 +25,14 @@ const gameContainer = document.getElementById('game-container');
 const startScreen = document.getElementById('start-screen');
 const startButton = document.getElementById('start-button');
 const nicknameInput = document.getElementById('nickname-input');
-const showLeaderboardButton = document.getElementById('show-leaderboard-button'); // NOWA ZMIENNA
+const showLeaderboardButton = document.getElementById('show-leaderboard-button');
 
 let playerNickname = "Gracz"; // Domyślny nick, jeśli nic nie wpisze
 
 const endScreen = document.getElementById('end-screen');
 const finalScoreDisplay = document.getElementById('final-score');
 const restartButton = document.getElementById('restart-button');
-const showLeaderboardAfterGameButton = document.getElementById('show-leaderboard-after-game-button'); // NOWA ZMIENNA
+const showLeaderboardAfterGameButton = document.getElementById('show-leaderboard-after-game-button');
 
 const leaderboardScreen = document.getElementById('leaderboard-screen');
 const leaderboardList = document.getElementById('leaderboard-list');
@@ -42,12 +42,23 @@ let score = 0;
 let timeoutId;
 let isGameActive = false;
 
-// --- Ustawienia Poziomu Trudności ---
+// --- Ustawienia Poziomu Trudności Czasu ---
 let currentTimeLimit = 2000;
 const INITIAL_TIME_LIMIT = 2000;
 const DECREMENT_PER_CLICK = 50;
-const CLICKS_FOR_DIFFICULTY_INCREASE = 5;
 const MIN_TIME_LIMIT = 500;
+
+// --- Ustawienia Poziomu Trudności Ruchu ---
+let moveIntervalId; // Id interwału dla ruchu obrazka
+let currentSpeed = 2; // Początkowa prędkość ruchu (piksele na klatkę)
+const INITIAL_SPEED = 2;
+const SPEED_INCREMENT = 0.5; // O ile zwiększa się prędkość za każdy próg
+const MAX_SPEED = 10; // Maksymalna prędkość, aby nie było za szybko
+
+let dx, dy; // Kierunki ruchu (delta x, delta y)
+
+const CLICKS_FOR_DIFFICULTY_INCREASE = 5; // Co tyle kliknięć zwiększa się trudność (zarówno czas, jak i prędkość)
+
 
 // --- Funkcje Leaderboarda ---
 // Zapisz wynik do Firebase
@@ -88,7 +99,7 @@ async function fetchAndDisplayLeaderboard() {
             leaderboardList.appendChild(li);
         });
     } catch (e) {
-        console.error("Błąd podczas pobierania rankingu: ", e); // To jest komunikat, który widzisz
+        console.error("Błąd podczas pobierania rankingu: ", e);
         leaderboardList.innerHTML = '<li>Wystąpił błąd podczas ładowania rankingu.</li>';
     }
 }
@@ -101,6 +112,9 @@ function resetGame() {
     targetImage.classList.add('hidden');
     messageDisplay.style.display = 'none';
     clearTimeout(timeoutId);
+    clearInterval(moveIntervalId); // Upewnij się, że interwał ruchu jest wyczyszczony
+    currentSpeed = INITIAL_SPEED; // ZRESETUJ PRĘDKOŚĆ RUCHU
+
     isGameActive = false;
     endScreen.classList.add('hidden');
     leaderboardScreen.classList.add('hidden');
@@ -140,12 +154,61 @@ function moveTargetImage() {
     targetImage.style.top = `${randomY}px`;
 }
 
+// Funkcja animująca ruch obrazka i odbijanie się od krawędzi
+function animateTargetImage() {
+    if (!isGameActive || targetImage.classList.contains('hidden')) {
+        clearInterval(moveIntervalId); // Zatrzymaj animację, jeśli gra nieaktywna lub obrazek ukryty
+        return;
+    }
+
+    let x = targetImage.offsetLeft;
+    let y = targetImage.offsetTop;
+
+    const targetWidth = targetImage.offsetWidth;
+    const targetHeight = targetImage.offsetHeight;
+
+    const containerWidth = gameContainer.offsetWidth;
+    const containerHeight = gameContainer.offsetHeight;
+
+    // Oblicz nową pozycję
+    x += dx;
+    y += dy;
+
+    // Logika odbijania się od krawędzi
+    if (x + targetWidth > containerWidth || x < 0) {
+        dx = -dx; // Odwróć kierunek X
+        // Dostosuj pozycję, aby nie wychodził poza ekran, zapobiegając "przyklejaniu"
+        if (x < 0) x = 0;
+        if (x + targetWidth > containerWidth) x = containerWidth - targetWidth;
+    }
+
+    if (y + targetHeight > containerHeight || y < 0) {
+        dy = -dy; // Odwróć kierunek Y
+        // Dostosuj pozycję, aby nie wychodził poza ekran, zapobiegając "przyklejaniu"
+        if (y < 0) y = 0;
+        if (y + targetHeight > containerHeight) y = containerHeight - targetHeight;
+    }
+
+    // Ustaw nową pozycję
+    targetImage.style.left = `${x}px`;
+    targetImage.style.top = `${y}px`;
+}
+
+
 // Rozpoczyna rundę - Ozzy się pojawia
 function startRound() {
     if (!isGameActive) return;
 
     targetImage.classList.remove('hidden');
-    moveTargetImage();
+    moveTargetImage(); // Ustawia początkową pozycję
+
+    // Wygeneruj losowy kierunek początkowy (na podstawie aktualnej prędkości)
+    dx = (Math.random() < 0.5 ? 1 : -1) * currentSpeed; // Losowo w prawo lub w lewo
+    dy = (Math.random() < 0.5 ? 1 : -1) * currentSpeed; // Losowo w górę lub w dół
+
+    // Uruchom interwał ruchu
+    clearInterval(moveIntervalId); // Upewnij się, że poprzedni interwał jest zatrzymany
+    moveIntervalId = setInterval(animateTargetImage, 20); // Aktualizuj pozycję co 20 ms
 
     clearTimeout(timeoutId);
 
@@ -160,6 +223,8 @@ function startRound() {
 function endGame(message) {
     isGameActive = false;
     clearTimeout(timeoutId);
+    clearInterval(moveIntervalId); // ZATZYMAJ ANIMACJĘ PO PRZEGRANEJ
+
     targetImage.classList.add('hidden');
     messageDisplay.style.display = 'none';
 
@@ -189,6 +254,7 @@ startButton.addEventListener('click', () => {
     score = 0;
     scoreDisplay.textContent = score;
     currentTimeLimit = INITIAL_TIME_LIMIT;
+    currentSpeed = INITIAL_SPEED; // Resetuj prędkość na start gry
     startRound();
 });
 
@@ -204,11 +270,15 @@ targetImage.addEventListener('click', (event) => {
         score++;
         scoreDisplay.textContent = score;
         clearTimeout(timeoutId);
+        clearInterval(moveIntervalId); // ZATZYMAJ ANIMACJĘ PO KLIKNIĘCIU
+
         targetImage.classList.add('hidden');
 
-        // Logika Poziomu Trudności
+        // Logika Poziomu Trudności (dla czasu i dla prędkości)
         if (score > 0 && score % CLICKS_FOR_DIFFICULTY_INCREASE === 0) {
             currentTimeLimit = Math.max(MIN_TIME_LIMIT, currentTimeLimit - DECREMENT_PER_CLICK);
+            currentSpeed = Math.min(MAX_SPEED, currentSpeed + SPEED_INCREMENT); // Zwiększ prędkość
+            console.log(`Zwiększenie trudności! Nowy limit czasu: ${currentTimeLimit}ms, Nowa prędkość: ${currentSpeed}`);
         }
 
         // Krótka przerwa przed rozpoczęciem nowej rundy
@@ -223,7 +293,7 @@ targetImage.addEventListener('click', (event) => {
 // Dodaj obsługę zmiany rozmiaru okna, aby obrazek zawsze był w widocznym obszarze
 window.addEventListener('resize', () => {
     if (isGameActive && !targetImage.classList.contains('hidden')) {
-        moveTargetImage();
+        moveTargetImage(); // Przemieść obrazek, jeśli okno zmieniło rozmiar
     }
 });
 
