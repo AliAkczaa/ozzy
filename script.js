@@ -33,7 +33,7 @@ function resetGame() {
     currentTimeLimit = INITIAL_TIME_LIMIT; // Resetuj limit czasu do początkowej wartości
 }
 
-// Funkcja wyświetlająca komunikaty (teraz tylko do komunikatów "w grze", nie przegranej)
+// Funkcja wyświetlająca komunikaty (tylko te, które nie zasłaniają gry, np. przyszłe wskazówki)
 function showMessage(message, duration = 1500) {
     messageDisplay.textContent = message;
     messageDisplay.style.display = 'block';
@@ -85,7 +85,7 @@ function endGame(message) {
     isGameActive = false;
     clearTimeout(timeoutId);
     targetImage.classList.add('hidden');
-    messageDisplay.style.display = 'none';
+    messageDisplay.style.display = 'none'; // Upewnij się, że komunikat w grze jest ukryty
 
     document.getElementById('end-message').textContent = message;
     finalScoreDisplay.textContent = score;
@@ -123,7 +123,8 @@ targetImage.addEventListener('click', (event) => {
         // --- Logika Poziomu Trudności ---
         if (score > 0 && score % CLICKS_FOR_DIFFICULTY_INCREASE === 0) {
             currentTimeLimit = Math.max(MIN_TIME_LIMIT, currentTimeLimit - DECREMENT_PER_CLICK);
-            showMessage(`Ozzy przyspiesza! Czas: ${currentTimeLimit / 1000}s`, 2000);
+            // USUNIĘTO: showMessage(`Ozzy przyspiesza! Czas: ${currentTimeLimit / 1000}s`, 2000);
+            // Komunikat o przyspieszaniu nie będzie już wyświetlany
         }
 
         // Krótka przerwa przed rozpoczęciem nowej rundy
