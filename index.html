@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clicker Obornika: Bitwa o Gówno!</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <img id="background-tractor" src="zdjecie 1 - tlo.jpg" alt="Traktor z rozrzutnikiem obornika">
+        <img id="target-image" src="zdjecie 2.jpg" alt="Ozzy" class="hidden">
+        
+        <div id="start-screen">
+            <h1>Bitwa o Gówno!</h1>
+            <p>Kliknij na rozrzutnik, aby zacząć! Kiedy pojawi się Ozzy, musisz kliknąć go w ciągu 2 sekund, zanim zje całe gówno! Im więcej gówna uratujesz, tym lepiej!</p>
+            <button id="start-button">Rozpocznij Bitwę!</button>
+        </div>
+
+        <div id="end-screen" class="hidden">
+            <h1>KONIEC GRY!</h1>
+            <p id="end-message">Ozzy zjadł całe gówno! Przegrałeś!</p>
+            <p id="final-score-display">Uratowałeś: <span id="final-score">0</span> kg gówna!</p>
+            <button id="restart-button">Zagraj Jeszcze Raz!</button>
+        </div>
+
+        <div id="score-display">Uratowane Gówno: <span id="score">0</span> kg</div>
+        <div id="message-display"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
