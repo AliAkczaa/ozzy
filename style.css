@@ -1,7 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
 body {
+    font-family: 'Press Start 2P', 'Comic Sans MS', cursive, sans-serif;
     margin: 0;
-    /* Zmień font na bardziej uniwersalny, z fallbackami */
-    font-family: 'Press Start 2P', 'Comic Sans MS', cursive, sans-serif; /* Dodaj np. Press Start 2P dla klimatu retro, jako pierwszy wybór */
     overflow: hidden;
     display: flex;
     justify-content: center;
@@ -10,14 +11,10 @@ body {
     background-color: #f0f0f0;
 }
 
-/* Import czcionki Google Fonts - umieść to NA POCZĄTKU pliku CSS */
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-
-
 #game-container {
     position: relative;
-    width: 100vw; /* Ustaw szerokość na 100% szerokości widoku */
-    height: 100vh; /* Ustaw wysokość na 100% wysokości widoku */
+    width: 100vw;
+    height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -26,19 +23,17 @@ body {
 #background-tractor {
     width: 100%;
     height: 100%;
-    object-fit: contain; /* Zmienione na contain */
+    object-fit: cover; /* Pozostaw cover, aby wypełniało ekran, obcięcie jest kompromisem dla proporcji */
     position: absolute;
     top: 0;
     left: 0;
-    background-color: black; /* Opcjonalnie: ustaw kolor tła dla pasków, np. czarny */
 }
 
 #target-image {
     position: absolute;
-    /* Użyj jednostek względnych dla rozmiaru, np. vw (viewport width) lub procentów */
-    width: 20vw; /* Na większych ekranach będzie większy, na mniejszych mniejszy */
-    height: 20vw; /* Zachowaj proporcje (kwadrat) */
-    max-width: 150px; /* Maksymalny rozmiar jak wcześniej */
+    width: 20vw;
+    height: 20vw;
+    max-width: 150px;
     max-height: 150px;
     border-radius: 50%;
     object-fit: cover;
@@ -54,15 +49,14 @@ body {
 
 #score-display {
     position: absolute;
-    top: 2vh; /* Odległość od góry w jednostkach wysokości widoku */
-    left: 2vw; /* Odległość od lewej w jednostkach szerokości widoku */
-    /* Zmniejsz domyślny rozmiar czcionki i użyj vmax */
-    font-size: 4vmin; /* Użyj jednostki vmin - mniejsza z vw/vh, aby font był responsywny */
+    top: 2vh;
+    left: 2vw;
+    font-size: 4vmin;
     font-weight: bold;
     color: yellow;
     text-shadow: 2px 2px 4px black;
     background-color: rgba(139, 69, 19, 0.7);
-    padding: 1vh 2vw; /* Odstępy responsywne */
+    padding: 1vh 2vw;
     border-radius: 15px;
     border: 3px solid #5a2c00;
     z-index: 10;
@@ -73,12 +67,12 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 6vmin; /* Responsywny rozmiar czcionki */
+    font-size: 6vmin;
     font-weight: bold;
     color: white;
     text-align: center;
     background-color: rgba(0, 0, 0, 0.9);
-    padding: 3vh 6vw; /* Responsywne odstępy */
+    padding: 3vh 6vw;
     border-radius: 30px;
     z-index: 20;
     display: none;
@@ -86,13 +80,13 @@ body {
     box-shadow: 0 0 30px red;
 }
 
-#start-screen, #end-screen {
+#start-screen, #end-screen, #leaderboard-screen { /* Zastosuj te same style dla wszystkich ekranów nakładkowych */
     position: absolute;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: rgba(0, 0, 0, 0.85);
+    background-color: rgba(0, 0, 0, 0.9); /* Ciemniejsze tło, żeby było czytelniej */
     color: white;
     display: flex;
     flex-direction: column;
@@ -100,20 +94,20 @@ body {
     align-items: center;
     text-align: center;
     z-index: 30;
-    padding: 2vw; /* Dodatkowy padding na ekranie, aby tekst nie dotykał krawędzi na małych ekranach */
-    box-sizing: border-box; /* Ważne, aby padding nie zwiększał szerokości ponad 100vw */
+    padding: 2vw;
+    box-sizing: border-box;
 }
 
-#start-screen h1, #end-screen h1 {
-    font-size: 7vmin; /* Responsywny rozmiar nagłówka */
+#start-screen h1, #end-screen h1, #leaderboard-screen h2 {
+    font-size: 7vmin;
     margin-bottom: 2vh;
     color: orange;
     text-shadow: 3px 3px 5px black;
 }
 
 #start-screen p, #end-screen p {
-    font-size: 3.5vmin; /* Responsywny rozmiar paragrafu */
-    max-width: 90%; /* Zwiększ max-width dla lepszego wykorzystania miejsca na małych ekranach */
+    font-size: 3.5vmin;
+    max-width: 90%;
     margin-bottom: 3vh;
     line-height: 1.5;
 }
@@ -123,15 +117,15 @@ body {
 }
 
 #final-score-display {
-    font-size: 5vmin; /* Responsywny rozmiar wyniku */
+    font-size: 5vmin;
     color: yellow;
     margin-bottom: 3vh;
     text-shadow: 2px 2px 5px black;
 }
 
-#start-button, #restart-button {
-    padding: 2vh 5vw; /* Responsywne odstępy przycisku */
-    font-size: 4vmin; /* Responsywny rozmiar czcionki przycisku */
+#start-button, #restart-button, #back-to-start-button {
+    padding: 2vh 5vw;
+    font-size: 4vmin;
     font-weight: bold;
     background-color: #4CAF50;
     color: white;
@@ -139,25 +133,128 @@ body {
     border-radius: 15px;
     cursor: pointer;
     transition: background-color 0.3s ease, transform 0.1s ease;
-    white-space: nowrap; /* Zapobiega łamaniu tekstu w przycisku na małych ekranach */
+    white-space: nowrap;
+    margin-top: 2vh; /* Dodatkowy margines dla przycisków */
 }
 
-#start-button:hover, #restart-button:hover {
+#start-button:hover, #restart-button:hover, #back-to-start-button:hover {
     background-color: #45a049;
     transform: scale(1.05);
+}
+
+/* Nick Input */
+#nick-input-container {
+    margin-bottom: 3vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1vh; /* Odstęp między label a inputem */
+}
+
+#nick-input-container label {
+    font-size: 3vmin;
+    color: yellow;
+    text-shadow: 1px 1px 2px black;
+}
+
+#nickname-input {
+    padding: 1.5vh 2vw;
+    font-size: 3vmin;
+    border: 2px solid #4CAF50;
+    border-radius: 8px;
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #333;
+    max-width: 80vw; /* Ogranicz szerokość na małych ekranach */
+}
+
+/* Leaderboard Specific Styles */
+#leaderboard-screen h2 {
+    color: gold;
+    margin-bottom: 4vh;
+}
+
+#leaderboard-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 90%;
+    max-width: 500px; /* Ogranicz szerokość listy na dużych ekranach */
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 10px;
+    border: 2px solid gold;
+    max-height: 60vh; /* Ogranicz wysokość, aby zmieściło się na małych ekranach */
+    overflow-y: auto; /* Włącz przewijanie, jeśli lista jest długa */
+}
+
+#leaderboard-list li {
+    font-size: 3.5vmin;
+    padding: 1.5vh 3vw;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#leaderboard-list li:last-child {
+    border-bottom: none;
+}
+
+#leaderboard-list li:nth-child(odd) {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+#leaderboard-list li:first-child { /* Złoty kolor dla lidera */
+    color: gold;
+    font-weight: bold;
+    font-size: 4vmin;
+}
+#leaderboard-list li:nth-child(2) { /* Srebrny */
+    color: silver;
+}
+#leaderboard-list li:nth-child(3) { /* Brązowy */
+    color: #cd7f32;
 }
 
 /* Media Queries - dla drobnych korekt na bardzo małych/dużych ekranach */
 @media (max-width: 600px) {
     #target-image {
-        width: 30vw; /* Zwiększ rozmiar Ozzy'ego na mniejszych ekranach, żeby był łatwiejszy do kliknięcia */
+        width: 30vw;
         height: 30vw;
+    }
+    #score-display {
+        font-size: 5vmin;
+    }
+    #nickname-input {
+        font-size: 4vmin;
     }
 }
 
 @media (min-width: 1200px) {
     #target-image {
-        width: 150px; /* Utrzymaj stały rozmiar na bardzo dużych ekranach, żeby nie był za duży */
+        width: 150px;
         height: 150px;
+    }
+    #start-screen h1, #end-screen h1, #leaderboard-screen h2 {
+        font-size: 60px;
+    }
+    #start-screen p, #end-screen p {
+        font-size: 24px;
+    }
+    #final-score-display {
+        font-size: 36px;
+    }
+    #start-button, #restart-button, #back-to-start-button {
+        font-size: 32px;
+    }
+    #score-display {
+        font-size: 30px;
+    }
+    #nickname-input {
+        font-size: 24px;
+        max-width: 300px;
+    }
+    #nick-input-container label {
+        font-size: 24px;
     }
 }

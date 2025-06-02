@@ -17,20 +17,33 @@
         <div id="start-screen">
             <h1>Bitwa o Gówno!</h1>
             <p>Kliknij na rozrzutnik, aby zacząć! Kiedy pojawi się Ozzy, musisz kliknąć go w ciągu 2 sekund, zanim zje całe gówno! Im więcej gówna uratujesz, tym lepiej!</p>
+            <div id="nick-input-container">
+                <label for="nickname-input">Twój Nick:</label>
+                <input type="text" id="nickname-input" placeholder="Wpisz swój nick" maxlength="15">
+            </div>
             <button id="start-button">Rozpocznij Bitwę!</button>
-        </div>
+            <button id="show-leaderboard-button">Ranking</button> </div>
 
         <div id="end-screen" class="hidden">
             <h1>KONIEC GRY!</h1>
             <p id="end-message">Ozzy zjadł całe gówno! Przegrałeś!</p>
             <p id="final-score-display">Uratowałeś: <span id="final-score">0</span> kg gówna!</p>
             <button id="restart-button">Zagraj Jeszcze Raz!</button>
+            <button id="show-leaderboard-after-game-button">Zobacz Ranking</button> </div>
+
+        <div id="leaderboard-screen" class="hidden">
+            <h2>Leaderboard</h2>
+            <ol id="leaderboard-list"></ol>
+            <button id="back-to-start-button">Wróć do menu</button>
         </div>
 
         <div id="score-display">Uratowane Gówno: <span id="score">0</span> kg</div>
         <div id="message-display"></div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    
     <script src="script.js"></script>
 </body>
 </html>

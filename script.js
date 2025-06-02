@@ -1,25 +1,99 @@
+// === Firebase Configuration (Musisz Zastąpić Własnymi Kluczami!) ===
+// Przejdź do Firebase Console -> Twój Projekt -> Ustawienia projektu (zębatka) -> Dodaj aplikację (ikona </> dla web)
+// Skopiuj obiekt firebaseConfig i wklej go tutaj:
+const firebaseConfig = {
+  apiKey: "AIzaSyASSmHw3LVUu7lSql0QwGmmBcFkaNeMups",
+  authDomain: "ozzy-14c19.firebaseapp.com",
+  projectId: "ozzy-14c19",
+  storageBucket: "ozzy-14c19.firebasestorage.app",
+  messagingSenderId: "668337469201",
+  appId: "1:668337469201:web:cd9d84d45c93d9b6e3feb0"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ===================================================================
+
 const backgroundTractor = document.getElementById('background-tractor');
 const targetImage = document.getElementById('target-image');
 const scoreDisplay = document.getElementById('score');
 const messageDisplay = document.getElementById('message-display');
 const gameContainer = document.getElementById('game-container');
+
 const startScreen = document.getElementById('start-screen');
 const startButton = document.getElementById('start-button');
+const nicknameInput = document.getElementById('nickname-input');
+const showLeaderboardButton = document.getElementById('show-leaderboard-button'); // NOWA ZMIENNA
+
+let playerNickname = "Gracz"; // Domyślny nick, jeśli nic nie wpisze
+
 const endScreen = document.getElementById('end-screen');
 const finalScoreDisplay = document.getElementById('final-score');
 const restartButton = document.getElementById('restart-button');
+const showLeaderboardAfterGameButton = document.getElementById('show-leaderboard-after-game-button'); // NOWA ZMIENNA
+
+const leaderboardScreen = document.getElementById('leaderboard-screen');
+const leaderboardList = document.getElementById('leaderboard-list');
+const backToStartButton = document.getElementById('back-to-start-button');
 
 let score = 0;
 let timeoutId;
 let isGameActive = false;
 
 // --- Ustawienia Poziomu Trudności ---
-let currentTimeLimit = 2000; // Początkowy limit czasu w milisekundach (2 sekundy)
-const INITIAL_TIME_LIMIT = 2000; // Początkowy limit czasu (dla resetu)
-const DECREMENT_PER_CLICK = 50; // O ile milisekund zmniejsza się czas za każde poprawne kliknięcie
-const CLICKS_FOR_DIFFICULTY_INCREASE = 5; // Co ile kliknięć następuje obniżenie czasu
-const MIN_TIME_LIMIT = 500; // Minimalny limit czasu (0.5 sekundy)
+let currentTimeLimit = 2000;
+const INITIAL_TIME_LIMIT = 2000;
+const DECREMENT_PER_CLICK = 50;
+const CLICKS_FOR_DIFFICULTY_INCREASE = 5;
+const MIN_TIME_LIMIT = 500;
 
+// --- Funkcje Leaderboarda ---
+// Zapisz wynik do Firebase
+async function saveScoreToLeaderboard(nickname, score) {
+    if (score > 0) { // Zapisz tylko, jeśli wynik jest większy od zera
+        try {
+            await db.collection("leaderboard").add({
+                nickname: nickname,
+                score: score,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp() // Dodaj znacznik czasu
+            });
+            console.log("Wynik zapisany pomyślnie!");
+        } catch (e) {
+            console.error("Błąd podczas zapisywania wyniku: ", e);
+        }
+    }
+}
+
+// Pobierz i wyświetl top 10 wyników
+async function fetchAndDisplayLeaderboard() {
+    leaderboardList.innerHTML = ''; // Wyczyść listę przed załadowaniem
+    try {
+        const snapshot = await db.collection("leaderboard")
+                                 .orderBy("score", "desc") // Sortuj malejąco po wyniku
+                                 .orderBy("timestamp", "asc") // Dodaj sekundarne sortowanie po czasie dla rozstrzygnięcia remisu
+                                 .limit(10) // Ogranicz do 10 wyników
+                                 .get();
+
+        if (snapshot.empty) {
+            leaderboardList.innerHTML = '<li>Brak wyników w rankingu. Bądź pierwszy!</li>';
+            return;
+        }
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const li = document.createElement('li');
+            li.textContent = `${data.nickname || 'Anonim'}: ${data.score} kg`;
+            leaderboardList.appendChild(li);
+        });
+    } catch (e) {
+        console.error("Błąd podczas pobierania rankingu: ", e); // To jest komunikat, który widzisz
+        leaderboardList.innerHTML = '<li>Wystąpił błąd podczas ładowania rankingu.</li>';
+    }
+}
+
+// --- Funkcje Gry ---
 // Funkcja do resetowania gry i pokazania ekranu startowego
 function resetGame() {
     score = 0;
@@ -29,11 +103,13 @@ function resetGame() {
     clearTimeout(timeoutId);
     isGameActive = false;
     endScreen.classList.add('hidden');
-    startScreen.classList.remove('hidden');
-    currentTimeLimit = INITIAL_TIME_LIMIT; // Resetuj limit czasu do początkowej wartości
+    leaderboardScreen.classList.add('hidden');
+    startScreen.classList.remove('hidden'); // Pokaż ekran startowy
+    currentTimeLimit = INITIAL_TIME_LIMIT; // Resetuj limit czasu
+    nicknameInput.value = playerNickname; // Ustaw ostatnio używany nick w polu
 }
 
-// Funkcja wyświetlająca komunikaty (tylko te, które nie zasłaniają gry, np. przyszłe wskazówki)
+// Funkcja wyświetlająca komunikaty (w grze)
 function showMessage(message, duration = 1500) {
     messageDisplay.textContent = message;
     messageDisplay.style.display = 'block';
@@ -56,8 +132,9 @@ function moveTargetImage() {
     const maxX = containerWidth - targetWidth;
     const maxY = containerHeight - targetHeight;
 
-    const randomX = Math.random() * maxX;
-    const randomY = Math.random() * maxY;
+    // Upewnij się, że obrazek docelowy pozostaje w granicach kontenera
+    const randomX = Math.max(0, Math.min(Math.random() * maxX, maxX));
+    const randomY = Math.max(0, Math.min(Math.random() * maxY, maxY));
 
     targetImage.style.left = `${randomX}px`;
     targetImage.style.top = `${randomY}px`;
@@ -72,12 +149,11 @@ function startRound() {
 
     clearTimeout(timeoutId);
 
-    // Ustaw timeout dla tej rundy z BIEŻĄCYM limitem czasu
     timeoutId = setTimeout(() => {
         if (isGameActive) {
             endGame('Ozzy zjadł całe gówno! Przegrałeś!');
         }
-    }, currentTimeLimit); // Użyj dynamicznego currentTimeLimit
+    }, currentTimeLimit);
 }
 
 // Funkcja odpowiedzialna za zakończenie gry i wyświetlenie ekranu końcowego
@@ -85,30 +161,40 @@ function endGame(message) {
     isGameActive = false;
     clearTimeout(timeoutId);
     targetImage.classList.add('hidden');
-    messageDisplay.style.display = 'none'; // Upewnij się, że komunikat w grze jest ukryty
+    messageDisplay.style.display = 'none';
 
     document.getElementById('end-message').textContent = message;
     finalScoreDisplay.textContent = score;
 
-    endScreen.classList.remove('hidden');
+    // Zapisz wynik do leaderboarda PO PRZEGRANEJ, jeśli nick jest wpisany
+    if (playerNickname.trim() !== "") {
+        saveScoreToLeaderboard(playerNickname, score);
+    }
+
+    endScreen.classList.remove('hidden'); // Pokaż ekran końcowy
 }
 
 // ---- Obsługa zdarzeń ----
-
 // Funkcja rozpoczynająca całą grę po kliknięciu przycisku Start
 startButton.addEventListener('click', () => {
+    const nick = nicknameInput.value.trim();
+    if (nick === "") {
+        showMessage("Musisz wpisać swój nick!", 2000);
+        return; // Nie rozpoczynaj gry bez nicku
+    }
+    playerNickname = nick; // Zapisz nick gracza
+    
     startScreen.classList.add('hidden');
     isGameActive = true;
     score = 0;
     scoreDisplay.textContent = score;
-    currentTimeLimit = INITIAL_TIME_LIMIT; // Upewnij się, że czas jest resetowany na początku nowej gry
+    currentTimeLimit = INITIAL_TIME_LIMIT;
     startRound();
 });
 
 // Obsługa kliknięcia przycisku Restart na ekranie końcowym
 restartButton.addEventListener('click', () => {
-    resetGame();
-    // Po resecie użytkownik musi kliknąć "Rozpocznij Bitwę!" ponownie
+    resetGame(); // Resetuje do stanu startowego, w tym pokazanie ekranu startowego
 });
 
 // Obsługa kliknięcia na docelowy obrazek (Ozzy'ego)
@@ -120,11 +206,9 @@ targetImage.addEventListener('click', (event) => {
         clearTimeout(timeoutId);
         targetImage.classList.add('hidden');
 
-        // --- Logika Poziomu Trudności ---
+        // Logika Poziomu Trudności
         if (score > 0 && score % CLICKS_FOR_DIFFICULTY_INCREASE === 0) {
             currentTimeLimit = Math.max(MIN_TIME_LIMIT, currentTimeLimit - DECREMENT_PER_CLICK);
-            // USUNIĘTO: showMessage(`Ozzy przyspiesza! Czas: ${currentTimeLimit / 1000}s`, 2000);
-            // Komunikat o przyspieszaniu nie będzie już wyświetlany
         }
 
         // Krótka przerwa przed rozpoczęciem nowej rundy
@@ -143,5 +227,32 @@ window.addEventListener('resize', () => {
     }
 });
 
-// Inicjalizacja: pokaż ekran startowy na początku i zresetuj stan gry
-resetGame();
+// Obsługa kliknięcia na tło (traktor) - nie robi nic
+backgroundTractor.addEventListener('click', () => {
+    // Brak akcji, chyba że chcesz dodać karę za kliknięcie na tło w trakcie gry.
+});
+
+// Obsługa przycisku "Ranking" na ekranie startowym
+showLeaderboardButton.addEventListener('click', () => {
+    startScreen.classList.add('hidden');
+    leaderboardScreen.classList.remove('hidden');
+    fetchAndDisplayLeaderboard(); // Załaduj i wyświetl ranking
+});
+
+// Obsługa przycisku "Zobacz Ranking" na ekranie końcowym
+showLeaderboardAfterGameButton.addEventListener('click', () => {
+    endScreen.classList.add('hidden');
+    leaderboardScreen.classList.remove('hidden');
+    fetchAndDisplayLeaderboard(); // Załaduj i wyświetl ranking
+});
+
+// Przycisk "Wróć do menu" na ekranie leaderboarda
+backToStartButton.addEventListener('click', () => {
+    leaderboardScreen.classList.add('hidden');
+    resetGame(); // Pokaże ekran startowy
+});
+
+// Inicjalizacja: Pokaż ekran startowy na początku
+document.addEventListener('DOMContentLoaded', () => {
+    resetGame(); // Ta funkcja już pokazuje ekran startowy
+});
