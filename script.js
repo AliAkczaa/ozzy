@@ -49,7 +49,7 @@ const DECREMENT_PER_CLICK = 50;
 const MIN_TIME_LIMIT = 500;
 
 // --- Ustawienia Poziomu Trudności Ruchu ---
-let moveIntervalId; // Id interwału dla ruchu obrazka
+let animationFrameId; // Id interwału dla ruchu obrazka
 let currentSpeed = 2; // Początkowa prędkość ruchu (piksele na klatkę)
 const INITIAL_SPEED = 2;
 const SPEED_INCREMENT = 0.5; // O ile zwiększa się prędkość za każdy próg
@@ -112,7 +112,7 @@ function resetGame() {
     targetImage.classList.add('hidden');
     messageDisplay.style.display = 'none';
     clearTimeout(timeoutId);
-    clearInterval(moveIntervalId); // Upewnij się, że interwał ruchu jest wyczyszczony
+    cancelAnimationFrame(animationFrameId); // Upewnij się, że animacja jest wyczyszczona
     currentSpeed = INITIAL_SPEED; // ZRESETUJ PRĘDKOŚĆ RUCHU
 
     isGameActive = false;
@@ -157,7 +157,7 @@ function moveTargetImage() {
 // Funkcja animująca ruch obrazka i odbijanie się od krawędzi
 function animateTargetImage() {
     if (!isGameActive || targetImage.classList.contains('hidden')) {
-        clearInterval(moveIntervalId); // Zatrzymaj animację, jeśli gra nieaktywna lub obrazek ukryty
+        cancelAnimationFrame(animationFrameId); // Zatrzymaj animację
         return;
     }
 
@@ -192,6 +192,10 @@ function animateTargetImage() {
     // Ustaw nową pozycję
     targetImage.style.left = `${x}px`;
     targetImage.style.top = `${y}px`;
+
+    // --- ZMIANA TUTAJ: Wywołaj requestAnimationFrame dla następnej klatki ---
+    animationFrameId = requestAnimationFrame(animateTargetImage);
+    // ------------------------------------------------------------------------
 }
 
 
@@ -206,9 +210,10 @@ function startRound() {
     dx = (Math.random() < 0.5 ? 1 : -1) * currentSpeed; // Losowo w prawo lub w lewo
     dy = (Math.random() < 0.5 ? 1 : -1) * currentSpeed; // Losowo w górę lub w dół
 
-    // Uruchom interwał ruchu
-    clearInterval(moveIntervalId); // Upewnij się, że poprzedni interwał jest zatrzymany
-    moveIntervalId = setInterval(animateTargetImage, 20); // Aktualizuj pozycję co 20 ms
+    // --- ZMIANA TUTAJ: Zamiast setInterval, użyj requestAnimationFrame ---
+    cancelAnimationFrame(animationFrameId); // Anuluj poprzednią ramkę animacji
+    animationFrameId = requestAnimationFrame(animateTargetImage); // Rozpocznij pętlę animacji
+    // ------------------------------------------------------------------
 
     clearTimeout(timeoutId);
 
@@ -223,7 +228,7 @@ function startRound() {
 function endGame(message) {
     isGameActive = false;
     clearTimeout(timeoutId);
-    clearInterval(moveIntervalId); // ZATZYMAJ ANIMACJĘ PO PRZEGRANEJ
+    cancelAnimationFrame(animationFrameId); // ZATZYMAJ ANIMACJĘ PO PRZEGRANEJ
 
     targetImage.classList.add('hidden');
     messageDisplay.style.display = 'none';
@@ -270,7 +275,10 @@ targetImage.addEventListener('click', (event) => {
         score++;
         scoreDisplay.textContent = score;
         clearTimeout(timeoutId);
-        clearInterval(moveIntervalId); // ZATZYMAJ ANIMACJĘ PO KLIKNIĘCIU
+
+        // --- ZMIANA TUTAJ: Anuluj ramkę animacji ---
+        cancelAnimationFrame(animationFrameId); // ZATZYMAJ ANIMACJĘ PO KLIKNIĘCIU
+        // -----------------------------------------
 
         targetImage.classList.add('hidden');
 
@@ -325,4 +333,19 @@ backToStartButton.addEventListener('click', () => {
 // Inicjalizacja: Pokaż ekran startowy na początku
 document.addEventListener('DOMContentLoaded', () => {
     resetGame(); // Ta funkcja już pokazuje ekran startowy
+});
+
+// Zablokowanie domyślnego menu kontekstowego na tle gry
+gameContainer.addEventListener('contextmenu', (e) => {
+    e.preventDefault(); // Zapobiega wyświetleniu menu kontekstowego
+});
+
+// Możesz też dodać to do samego obrazka tła, aby być bardziej precyzyjnym:
+backgroundTractor.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+});
+
+// Zablokowanie domyślnego przeciągania na obrazku tła (dodatkowe zabezpieczenie JS, choć draggable="false" w HTML jest lepsze)
+backgroundTractor.addEventListener('dragstart', (e) => {
+    e.preventDefault();
 });

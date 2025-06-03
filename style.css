@@ -1,14 +1,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
 body {
-    font-family: 'Press Start 2P', 'Comic Sans MS', cursive, sans-serif;
-    margin: 0;
-    overflow: hidden;
+    font-family: 'Press Start 2P', cursive;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background-color: #f0f0f0;
+    margin: 0;
+    background-color: #333;
+    overflow: hidden; /* Zapobiega przewijaniu, jeśli gra jest większa niż ekran */
+    
+    /* DODANE: Zapobiega zaznaczaniu tekstu/obrazków */
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE/Edge */
+    user-select: none; /* Standard */
 }
 
 #game-container {
