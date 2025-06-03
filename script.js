@@ -18,7 +18,6 @@ const db = firebase.firestore();
 
 // Pobieranie referencji do elementów DOM
 const backgroundTractor = document.getElementById('animated-background-tractor');
-// Zmieniamy referencję na nowy wrapper
 const clickableOzzyWrapper = document.getElementById('clickable-ozzy-wrapper'); 
 const scoreDisplay = document.getElementById('score');
 const messageDisplay = document.getElementById('message-display');
@@ -60,6 +59,11 @@ const MAX_SPEED = 10;
 let dx, dy;
 
 const CLICKS_FOR_DIFFICULTY_INCREASE = 5;
+
+// --- Referencje do elementów audio (DODANE) ---
+const backgroundMusic = document.getElementById('background-music');
+const deathSound = document.getElementById('death-sound');
+
 
 // --- Funkcje Leaderboarda ---
 async function saveScoreToLeaderboard(nickname, score) {
@@ -107,7 +111,7 @@ async function fetchAndDisplayLeaderboard() {
 function resetGame() {
     score = 0;
     scoreDisplay.textContent = score;
-    clickableOzzyWrapper.classList.add('hidden'); // Użyj wrapper'a
+    clickableOzzyWrapper.classList.add('hidden');
     messageDisplay.style.display = 'none';
     clearTimeout(timeoutId);
     cancelAnimationFrame(animationFrameId);
@@ -119,6 +123,12 @@ function resetGame() {
     startScreen.classList.remove('hidden');
     currentTimeLimit = INITIAL_TIME_LIMIT;
     nicknameInput.value = playerNickname;
+
+    // Zatrzymaj muzykę w tle, gdy gra jest resetowana (np. powrót do menu) (DODANE)
+    if (backgroundMusic) {
+        backgroundMusic.pause();
+        backgroundMusic.currentTime = 0; // Zresetuj czas odtwarzania
+    }
 }
 
 function showMessage(message, duration = 1500) {
@@ -132,12 +142,10 @@ function showMessage(message, duration = 1500) {
     }, duration);
 }
 
-// Funkcja do losowego pozycjonowania obrazka (teraz używa offsetWidth/Height wrapper'a)
 function moveTargetImage() {
     const containerWidth = gameContainer.offsetWidth;
     const containerHeight = gameContainer.offsetHeight;
 
-    // Użyj wymiarów wrapper'a
     const targetWidth = clickableOzzyWrapper.offsetWidth;
     const targetHeight = clickableOzzyWrapper.offsetHeight;
 
@@ -147,26 +155,23 @@ function moveTargetImage() {
     const randomX = Math.max(0, Math.min(Math.random() * maxX, maxX));
     const randomY = Math.max(0, Math.min(Math.random() * maxY, maxY));
 
-    clickableOzzyWrapper.style.left = `${randomX}px`; // Użyj wrapper'a
-    clickableOzzyWrapper.style.top = `${randomY}px`; // Użyj wrapper'a
+    clickableOzzyWrapper.style.left = `${randomX}px`;
+    clickableOzzyWrapper.style.top = `${randomY}px`;
 
     console.log(`MOVE (Old Logic): Container: ${containerWidth}x${containerHeight}, Target Wrapper: ${targetWidth}x${targetHeight}`);
     console.log(`MOVE (Old Logic): Max X: ${maxX}, Max Y: ${maxY}`);
     console.log(`MOVE (Old Logic): New Ozzy Wrapper Pos: ${randomX.toFixed(2)}, ${randomY.toFixed(2)}`);
 }
 
-// Funkcja animująca ruch obrazka i odbijanie się od krawędzi (teraz używa offsetLeft/Top wrapper'a)
 function animateTargetImage() {
-    // Użyj wrapper'a
     if (!isGameActive || clickableOzzyWrapper.classList.contains('hidden')) {
         cancelAnimationFrame(animationFrameId);
         return;
     }
 
-    let x = clickableOzzyWrapper.offsetLeft; // Użyj wrapper'a
-    let y = clickableOzzyWrapper.offsetTop; // Użyj wrapper'a
+    let x = clickableOzzyWrapper.offsetLeft;
+    let y = clickableOzzyWrapper.offsetTop;
 
-    // Użyj wymiarów wrapper'a
     const targetWidth = clickableOzzyWrapper.offsetWidth;
     const targetHeight = clickableOzzyWrapper.offsetHeight;
 
@@ -196,8 +201,8 @@ function animateTargetImage() {
         console.log(`Bounce Y (top): New Y=${y.toFixed(2)}`);
     }
 
-    clickableOzzyWrapper.style.left = `${x}px`; // Użyj wrapper'a
-    clickableOzzyWrapper.style.top = `${y}px`; // Użyj wrapper'a
+    clickableOzzyWrapper.style.left = `${x}px`;
+    clickableOzzyWrapper.style.top = `${y}px`;
 
     animationFrameId = requestAnimationFrame(animateTargetImage);
 }
@@ -205,7 +210,7 @@ function animateTargetImage() {
 function startRound() {
     if (!isGameActive) return;
 
-    clickableOzzyWrapper.classList.remove('hidden'); // Użyj wrapper'a
+    clickableOzzyWrapper.classList.remove('hidden');
     moveTargetImage();
 
     dx = (Math.random() < 0.5 ? 1 : -1) * currentSpeed;
@@ -228,7 +233,7 @@ function endGame(message) {
     clearTimeout(timeoutId);
     cancelAnimationFrame(animationFrameId);
 
-    clickableOzzyWrapper.classList.add('hidden'); // Użyj wrapper'a
+    clickableOzzyWrapper.classList.add('hidden');
     messageDisplay.style.display = 'none';
 
     document.getElementById('end-message').textContent = message;
@@ -239,12 +244,15 @@ function endGame(message) {
     }
 
     endScreen.classList.remove('hidden');
+
+    // Zatrzymaj muzykę w tle po zakończeniu gry (DODANE)
+    if (backgroundMusic) {
+        backgroundMusic.pause();
+        backgroundMusic.currentTime = 0;
+    }
 }
 
 function handleTargetClick(event) {
-    // Sprawdź, czy kliknięcie nastąpiło na wrapperze, a nie na samym obrazku (dla pewności)
-    // event.target to element, który faktycznie został kliknięty
-    // event.currentTarget to element, do którego listener jest przypisany (czyli clickableOzzyWrapper)
     if (isGameActive && event.currentTarget === clickableOzzyWrapper && !clickableOzzyWrapper.classList.contains('hidden')) {
         event.stopPropagation();
         score++;
@@ -252,7 +260,13 @@ function handleTargetClick(event) {
         clearTimeout(timeoutId);
         cancelAnimationFrame(animationFrameId);
 
-        clickableOzzyWrapper.classList.add('hidden'); // Ukryj wrapper
+        clickableOzzyWrapper.classList.add('hidden');
+
+        // Odtwórz dźwięk śmierci/kliknięcia (DODANE)
+        if (deathSound) {
+            deathSound.currentTime = 0; // Zresetuj dźwięk, aby mógł być odtworzony ponownie natychmiast
+            deathSound.play().catch(e => console.error("Błąd odtwarzania deathSound:", e));
+        }
 
         if (score > 0 && score % CLICKS_FOR_DIFFICULTY_INCREASE === 0) {
             currentTimeLimit = Math.max(MIN_TIME_LIMIT, currentTimeLimit - DECREMENT_PER_CLICK);
@@ -284,17 +298,19 @@ startButton.addEventListener('click', () => {
     currentTimeLimit = INITIAL_TIME_LIMIT;
     currentSpeed = INITIAL_SPEED;
     startRound();
+
+    // Rozpocznij odtwarzanie muzyki w tle po pierwszym kliknięciu użytkownika (DODANE)
+    if (backgroundMusic) {
+        backgroundMusic.play().catch(e => console.error("Błąd odtwarzania backgroundMusic:", e));
+    }
 });
 
-// Obsługa kliknięcia przycisku Restart na ekranie końcowym
 restartButton.addEventListener('click', () => {
     resetGame();
 });
 
-// Obsługa kliknięcia na opakowujący element Ozzy'ego
 clickableOzzyWrapper.addEventListener('click', handleTargetClick);
 
-// Obsługa dotyku dla urządzeń mobilnych
 clickableOzzyWrapper.addEventListener('touchstart', (event) => {
     event.preventDefault();
     handleTargetClick(event);
