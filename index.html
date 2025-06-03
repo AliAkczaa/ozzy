@@ -11,25 +11,29 @@
 </head>
 <body>
     <div id="game-container">
-        <img id="background-tractor" src="zdjecie 1 - tlo.jpg" alt="Traktor z rozrzutnikiem obornika" draggable="false">
-        <img id="target-image" src="zdjecie 2.jpg" alt="Ozzy" class="hidden" draggable="false">
+        <img id="animated-background-tractor" src="zdjecie 1 - tlo.jpg" alt="Traktor z rozrzutnikiem obornika" draggable="false">
+        <div id="clickable-ozzy-wrapper" class="hidden" draggable="false">
+            <img id="target-image" src="zdjecie 2.jpg" alt="Ozzy">
+        </div>
         
         <div id="start-screen">
             <h1>Bitwa o Gówno!</h1>
-            <p>Kliknij na rozrzutnik, aby zacząć! Kiedy pojawi się Ozzy, musisz kliknąć go w ciągu 2 sekund, zanim zje całe gówno! Im więcej gówna uratujesz, tym lepiej!</p>
+            <p>Kiedy pojawi się Ozzy, musisz kliknąć go w ciągu 2 sekund, zanim zje całe gówno! Im więcej gówna uratujesz, tym lepiej!</p>
             <div id="nick-input-container">
                 <label for="nickname-input">Twój Nick:</label>
                 <input type="text" id="nickname-input" placeholder="Wpisz swój nick" maxlength="15">
             </div>
             <button id="start-button">Rozpocznij Bitwę!</button>
-            <button id="show-leaderboard-button">Ranking</button> </div>
+            <button id="show-leaderboard-button">Ranking</button>
+        </div>
 
         <div id="end-screen" class="hidden">
             <h1>KONIEC GRY!</h1>
             <p id="end-message">Ozzy zjadł całe gówno! Przegrałeś!</p>
             <p id="final-score-display">Uratowałeś: <span id="final-score">0</span> kg gówna!</p>
             <button id="restart-button">Zagraj Jeszcze Raz!</button>
-            <button id="show-leaderboard-after-game-button">Zobacz Ranking</button> </div>
+            <button id="show-leaderboard-after-game-button">Zobacz Ranking</button>
+        </div>
 
         <div id="leaderboard-screen" class="hidden">
             <h2>Leaderboard</h2>
