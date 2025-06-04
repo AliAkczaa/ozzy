@@ -19,7 +19,8 @@ const db = firebase.firestore();
 // Pobieranie referencji do elementów DOM
 const backgroundTractor = document.getElementById('animated-background-tractor');
 const clickableOzzyWrapper = document.getElementById('clickable-ozzy-wrapper'); 
-const targetImage = document.getElementById('target-image'); // Referencja do samego obrazka Ozzy'ego
+// Dodano referencję do samego obrazka Ozzy'ego (potrzebna do animacji śmierci)
+const targetImage = document.getElementById('target-image'); 
 const scoreDisplay = document.getElementById('score');
 const messageDisplay = document.getElementById('message-display');
 const gameContainer = document.getElementById('game-container');
@@ -43,7 +44,8 @@ const backToStartButton = document.getElementById('back-to-start-button');
 let score = 0;
 let timeoutId;
 let isGameActive = false;
-let isOzzyDying = false; // Flaga do kontroli stanu animacji śmierci
+// Dodano flagę do kontroli stanu animacji śmierci i zapobiegania podwójnym kliknięciom
+let isOzzyDying = false; 
 
 // --- Ustawienia Poziomu Trudności Czasu ---
 let currentTimeLimit = 2000;
@@ -66,9 +68,21 @@ const CLICKS_FOR_DIFFICULTY_INCREASE = 5;
 const backgroundMusic = document.getElementById('background-music');
 const deathSound = document.getElementById('death-sound');
 
+// --- DODANE: Maksymalny wynik po stronie klienta (anti-cheat) ---
+const CLIENT_SIDE_MAX_SCORE = 150; // Maksymalny wynik, który uznamy za realistyczny po stronie klienta
+
 
 // --- Funkcje Leaderboarda ---
 async function saveScoreToLeaderboard(nickname, score) {
+    // DODANE: Sprawdzenie wyniku przed próbą zapisu do Firebase
+    if (score > CLIENT_SIDE_MAX_SCORE) {
+        showMessage("Spierdalaj frajerze cheaterze! Wynik nierealny!", 3000); // Komunikat dla cheatera
+        console.warn(`Próba zapisu nierealnego wyniku (${score}) przez ${nickname}. Zablokowano.`);
+        // Nie próbuj zapisywać do Firebase, po prostu zresetuj grę
+        setTimeout(resetGame, 3000); // Resetuj grę po komunikacie
+        return; 
+    }
+
     if (score > 0) {
         try {
             await db.collection("leaderboard").add({
@@ -130,7 +144,7 @@ function resetGame() {
     // Zatrzymaj muzykę w tle, gdy gra jest resetowana
     if (backgroundMusic) {
         backgroundMusic.pause();
-        backgroundMusic.currentTime = 0;
+        backgroundMusic.currentTime = 0; // Zresetuj czas odtwarzania
     }
     // Upewnij się, że Ozzy nie ma klasy animacji śmierci po resecie
     targetImage.classList.remove('dying-ozzy'); 
@@ -256,9 +270,8 @@ function endGame(message) {
     document.getElementById('end-message').textContent = message;
     finalScoreDisplay.textContent = score;
 
-    if (playerNickname.trim() !== "") {
-        saveScoreToLeaderboard(playerNickname, score);
-    }
+    // Wywołaj saveScoreToLeaderboard, które teraz zawiera logikę anti-cheat
+    saveScoreToLeaderboard(playerNickname, score);
 
     endScreen.classList.remove('hidden');
 
