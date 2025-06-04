@@ -12,8 +12,9 @@ const firebaseConfig = {
 
 // === DODANE: Importy modularne Firebase SDK v9 ===
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
-import { getFirestore, collection, addDoc, getDocs, orderBy, query, limit } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
-import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js'; // WAŻNE: Usunięto "-compat"
+// WAŻNE: Dodano FieldValue do importów Firestore
+import { getFirestore, collection, addDoc, getDocs, orderBy, query, limit, FieldValue } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
+import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js'; 
 
 // Inicjalizacja Firebase (teraz używamy modularnych funkcji)
 const app = initializeApp(firebaseConfig);
@@ -40,7 +41,7 @@ let playerNickname = "Gracz";
 const endScreen = document.getElementById('end-screen');
 const finalScoreDisplay = document.getElementById('final-score');
 const restartButton = document.getElementById('restart-button');
-const showLeaderboardAfterGameButton = document.getElementById('show-leaderboard-after-game-button');
+const showLeaderboardAfterGameButton = document.getElementById('show-leaderboard-after-game-button'); // Poprawiona literówka
 
 const leaderboardScreen = document.getElementById('leaderboard-screen');
 const leaderboardList = document.getElementById('leaderboard-list');
@@ -88,11 +89,10 @@ async function saveScoreToLeaderboard(nickname, score) {
 
     if (score > 0 && currentUserId) { 
         try {
-            // Użycie modularnego addDoc
             await addDoc(collection(db, "leaderboard"), {
                 nickname: nickname,
                 score: score,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(), // Nadal używamy globalnego Firebase dla FieldValue
+                timestamp: FieldValue.serverTimestamp(), // POPRAWIONO: Użycie FieldValue z importu
                 userId: currentUserId 
             });
             console.log("Wynik zapisany pomyślnie!");
@@ -107,7 +107,6 @@ async function saveScoreToLeaderboard(nickname, score) {
 async function fetchAndDisplayLeaderboard() {
     leaderboardList.innerHTML = '';
     try {
-        // Użycie modularnych query, collection, getDocs, orderBy, limit
         const q = query(collection(db, "leaderboard"), orderBy("score", "desc"), orderBy("timestamp", "asc"), limit(10));
         const snapshot = await getDocs(q);
 
@@ -200,7 +199,6 @@ function animateTargetImage() {
     const targetHeight = clickableOzzyWrapper.offsetHeight;
 
     const containerWidth = gameContainer.offsetWidth;
-    // POPRAWIONO: Zmieniono gameGameContainer na gameContainer
     const containerHeight = gameContainer.offsetHeight; 
 
     x += dx;
