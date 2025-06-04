@@ -2,21 +2,23 @@
 // Przejdź do Firebase Console -> Twój Projekt -> Ustawienia projektu (zębatka) -> Dodaj aplikację (ikona </> dla web)
 // Skopiuj obiekt firebaseConfig i wklej go tutaj:
 const firebaseConfig = {
-  apiKey: "AIzaSyASSmHw3LVUu7lSql0QwGmmBcFkaNeMups",
-  authDomain: "ozzy-14c19.firebaseapp.com",
-  projectId: "ozzy-14c19",
-  storageBucket: "ozzy-14c19.firebasestorage.app",
-  messagingSenderId: "668337469201",
-  appId: "1:668337469201:web:cd9d84d45c93d9b6e3feb0"
+    apiKey: "AIzaSyASSmHw3LVUu7lSql0QwGmmBcFkaNeMups", // Twoje klucze Firebase
+    authDomain: "ozzy-14c19.firebaseapp.com",
+    projectId: "ozzy-14c19",
+    storageBucket: "ozzy-14c19.firebasestorage.app",
+    messagingSenderId: "668337469201",
+    appId: "1:668337469201:web:cd9d84d45c93d9b6e3feb0"
 };
 
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+// === DODANE: Importy modularne Firebase SDK v9 ===
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
+import { getFirestore, collection, addDoc, getDocs, orderBy, query, limit } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
+import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js'; // WAŻNE: Usunięto "-compat"
 
-// === DODANE: Importuj moduł Auth i uzyskaj instancję ===
-import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js';
-const auth = getAuth(); 
+// Inicjalizacja Firebase (teraz używamy modularnych funkcji)
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app); 
 
 // ===================================================================
 
@@ -48,7 +50,7 @@ let score = 0;
 let timeoutId;
 let isGameActive = false;
 let isOzzyDying = false; 
-let currentUserId = null; // DODANE: Przechowuje ID aktualnie zalogowanego użytkownika
+let currentUserId = null; 
 
 // --- Ustawienia Poziomu Trudności Czasu ---
 let currentTimeLimit = 2000;
@@ -77,7 +79,6 @@ const CLIENT_SIDE_MAX_SCORE = 200;
 
 // --- Funkcje Leaderboarda ---
 async function saveScoreToLeaderboard(nickname, score) {
-    // DODANE: Sprawdzenie wyniku przed próbą zapisu do Firebase
     if (score > CLIENT_SIDE_MAX_SCORE) {
         showMessage("Spierdalaj frajerze cheaterze! Wynik nierealny!", 3000); 
         console.warn(`Próba zapisu nierealnego wyniku (${score}) przez ${nickname}. Zablokowano.`);
@@ -85,20 +86,20 @@ async function saveScoreToLeaderboard(nickname, score) {
         return; 
     }
 
-    // DODANE: Sprawdź, czy użytkownik jest uwierzytelniony przed zapisem
     if (score > 0 && currentUserId) { 
         try {
-            await db.collection("leaderboard").add({
+            // Użycie modularnego addDoc
+            await addDoc(collection(db, "leaderboard"), {
                 nickname: nickname,
                 score: score,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                userId: currentUserId // DODANE: Zapisz ID użytkownika
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(), // Nadal używamy globalnego Firebase dla FieldValue
+                userId: currentUserId 
             });
             console.log("Wynik zapisany pomyślnie!");
         } catch (e) {
             console.error("Błąd podczas zapisywania wyniku: ", e);
         }
-    } else if (!currentUserId) { // DODANE: Komunikat, jeśli brak uwierzytelnienia
+    } else if (!currentUserId) { 
         console.warn("Nie można zapisać wyniku: Użytkownik nie jest uwierzytelniony. Sprawdź konfigurację Firebase Auth.");
     }
 }
@@ -106,11 +107,9 @@ async function saveScoreToLeaderboard(nickname, score) {
 async function fetchAndDisplayLeaderboard() {
     leaderboardList.innerHTML = '';
     try {
-        const snapshot = await db.collection("leaderboard")
-                                 .orderBy("score", "desc")
-                                 .orderBy("timestamp", "asc")
-                                 .limit(10)
-                                 .get();
+        // Użycie modularnych query, collection, getDocs, orderBy, limit
+        const q = query(collection(db, "leaderboard"), orderBy("score", "desc"), orderBy("timestamp", "asc"), limit(10));
+        const snapshot = await getDocs(q);
 
         if (snapshot.empty) {
             leaderboardList.innerHTML = '<li>Brak wyników w rankingu. Bądź pierwszy!</li>';
@@ -201,7 +200,8 @@ function animateTargetImage() {
     const targetHeight = clickableOzzyWrapper.offsetHeight;
 
     const containerWidth = gameContainer.offsetWidth;
-    const containerHeight = gameContainer.offsetHeight;
+    // POPRAWIONO: Zmieniono gameGameContainer na gameContainer
+    const containerHeight = gameContainer.offsetHeight; 
 
     x += dx;
     y += dy;
@@ -394,20 +394,17 @@ backToStartButton.addEventListener('click', () => {
     resetGame();
 });
 
-// DODANE: Inicjalizacja uwierzytelniania anonimowego po załadowaniu DOM
 document.addEventListener('DOMContentLoaded', async () => {
     resetGame();
     console.log("Initial game container dimensions:", gameContainer.offsetWidth, gameContainer.offsetHeight);
     console.log("Initial target image (Ozzy) dimensions:", clickableOzzyWrapper.offsetWidth, clickableOzzyWrapper.offsetHeight);
 
     try {
-        // Zaloguj użytkownika anonimowo
         const userCredential = await signInAnonymously(auth);
         currentUserId = userCredential.user.uid;
         console.log("Zalogowano anonimowo. UID:", currentUserId);
     } catch (error) {
         console.error("Błąd logowania anonimowego:", error);
-        // Możesz dodać komunikat dla użytkownika, jeśli logowanie anonimowe się nie powiedzie
         showMessage("Błąd połączenia z rankingiem. Spróbuj odświeżyć stronę.", 5000);
     }
 });
