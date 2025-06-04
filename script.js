@@ -12,8 +12,8 @@ const firebaseConfig = {
 
 // === DODANE: Importy modularne Firebase SDK v9 ===
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
-// WAŻNE: Dodano FieldValue do importów Firestore
-import { getFirestore, collection, addDoc, getDocs, orderBy, query, limit, FieldValue } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
+// WAŻNE: Poprawiono import FieldValue na serverTimestamp
+import { getFirestore, collection, addDoc, getDocs, orderBy, query, limit, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
 import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js'; 
 
 // Inicjalizacja Firebase (teraz używamy modularnych funkcji)
@@ -92,7 +92,7 @@ async function saveScoreToLeaderboard(nickname, score) {
             await addDoc(collection(db, "leaderboard"), {
                 nickname: nickname,
                 score: score,
-                timestamp: FieldValue.serverTimestamp(), // POPRAWIONO: Użycie FieldValue z importu
+                timestamp: serverTimestamp(), // POPRAWIONO: Użycie serverTimestamp z importu
                 userId: currentUserId 
             });
             console.log("Wynik zapisany pomyślnie!");
